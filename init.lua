@@ -253,6 +253,10 @@ do
   })
 end
 
+-- Inside VS Code (vscode-neovim) only options and keymaps apply: VS Code
+-- itself provides the UI, LSP, completion and file tree.
+if vim.g.vscode then return end
+
 -- ============================================================
 -- SECTION 3: PLUGIN MANAGER INTRO
 -- vim.pack intro, build hooks
@@ -731,8 +735,33 @@ do
   -- Enable the following language servers
   --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
   --  See `:help lsp-config` for information about keys and how to configure
+  -- JSON/YAML schemas (package.json, GitHub workflows, docker-compose, ...)
+  vim.pack.add { gh 'b0o/SchemaStore.nvim' }
+
   ---@type table<string, vim.lsp.Config>
   local servers = {
+    bashls = {},
+    dockerls = {},
+    docker_compose_language_service = {},
+    helm_ls = {},
+    jsonls = {
+      settings = { json = { schemas = require('schemastore').json.schemas(), validate = { enable = true } } },
+    },
+    marksman = {},
+    pyright = {},
+    rust_analyzer = {},
+    taplo = {},
+    terraformls = {},
+    ts_ls = {},
+    yamlls = {
+      settings = {
+        yaml = {
+          schemaStore = { enable = false, url = '' }, -- SchemaStore.nvim provides them
+          schemas = require('schemastore').yaml.schemas(),
+        },
+      },
+    },
+
     -- clangd = {},
     -- gopls = {},
     -- pyright = {},
@@ -804,6 +833,13 @@ do
   local ensure_installed = vim.tbl_keys(servers or {})
   vim.list_extend(ensure_installed, {
     -- You can add other tools here that you want Mason to install
+    'hadolint', -- Dockerfile linter (nvim-lint)
+    'markdownlint', -- Markdown linter (nvim-lint)
+    'prettier', -- JSON/YAML/Markdown/JS/TS formatter (conform)
+    'ruff', -- Python formatter (conform)
+    'shellcheck', -- used by bashls for diagnostics
+    'shfmt', -- shell formatter (conform)
+    'tflint', -- Terraform linter (nvim-lint)
   })
 
   require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -840,6 +876,18 @@ do
     },
     -- You can also specify external formatters in here.
     formatters_by_ft = {
+      sh = { 'shfmt' },
+      bash = { 'shfmt' },
+      python = { 'ruff_organize_imports', 'ruff_format' },
+      terraform = { 'terraform_fmt' },
+      hcl = { 'terraform_fmt' },
+      json = { 'prettier' },
+      jsonc = { 'prettier' },
+      yaml = { 'prettier' },
+      markdown = { 'prettier' },
+      javascript = { 'prettier' },
+      typescript = { 'prettier' },
+      lua = { 'stylua' },
       -- rust = { 'rustfmt' },
       -- Conform can also run multiple formatters sequentially
       -- python = { "isort", "black" },
@@ -868,8 +916,8 @@ do
   --    See the README about individual language/framework/plugin snippets:
   --    https://github.com/rafamadriz/friendly-snippets
   --
-  -- vim.pack.add { gh 'rafamadriz/friendly-snippets' }
-  -- require('luasnip.loaders.from_vscode').lazy_load()
+  vim.pack.add { gh 'rafamadriz/friendly-snippets' }
+  require('luasnip.loaders.from_vscode').lazy_load()
 
   -- [[ Autocomplete Engine ]]
   vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range '1.*' } }
@@ -948,7 +996,11 @@ do
   vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
   -- Ensure basic parsers are installed
-  local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+  local parsers = {
+    'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc',
+    'dockerfile', 'git_config', 'gitcommit', 'git_rebase', 'go', 'hcl', 'helm', 'javascript', 'json', 'python',
+    'regex', 'rust', 'terraform', 'toml', 'tsx', 'typescript', 'yaml',
+  }
   require('nvim-treesitter').install(parsers)
 
   ---@param buf integer
@@ -1015,15 +1067,15 @@ do
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug'
-  -- require 'kickstart.plugins.indent_line'
-  -- require 'kickstart.plugins.lint'
-  -- require 'kickstart.plugins.autopairs'
+  require 'kickstart.plugins.indent_line'
+  require 'kickstart.plugins.lint'
+  require 'kickstart.plugins.autopairs'
   require 'kickstart.plugins.neo-tree'
 
   -- NOTE: You can add your own plugins, configuration, etc. in `lua/custom/plugins/*.lua`.
   --
   -- For independent modules, uncomment the convenience loader:
-  -- require 'custom.plugins'
+  require 'custom.plugins'
   --
   -- `custom.plugins` automatically loads files from that directory, but their
   -- order is unspecified. If plugins depend on each other, keep them in the same
