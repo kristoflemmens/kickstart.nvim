@@ -884,7 +884,7 @@ do
       json = { 'prettier' },
       jsonc = { 'prettier' },
       yaml = { 'prettier' },
-      markdown = { 'prettier' },
+      markdown = { 'prettier', 'markdownlint' },
       javascript = { 'prettier' },
       typescript = { 'prettier' },
       lua = { 'stylua' },
